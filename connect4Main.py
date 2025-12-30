@@ -13,7 +13,7 @@ board = ""
 welcomeSymbol = "^"
 message = "Play Connect 4!"
 P1Char = "X"
-P2Char = "O"
+P2Char = "T"
 minInput = 2
 maxInput = 4
 yCoordsIndicator = (verticalLength - 1) //2
@@ -74,7 +74,7 @@ def getNewPrintBoard(gameBoard):
                 board += lenOfLeftWidth*space
             for col in range(numCols):
                 symbolAtCoords = gameBoard[row][col]
-                if symbolAtCoords == horizontalSymbol:
+                if symbolAtCoords == placeholderSymbol:
                     cell = middleP0
                 elif symbolAtCoords == P1Char:
                     cell = middleP1
@@ -111,17 +111,17 @@ def isValidInput(input):
     else:
         return True
 
-def getInput():
+def getInput(P):
     isNotValid = True
     while isNotValid:
-        P1Input = input("Player 1's turn:")
+        P1Input = input(f"Player {P}'s turn:")
         isNotValid = not isValidInput(P1Input)
     return P1Input
 
 def getInputCoords(letters):
     num = getNumberFromLetter(letters)
     if isColumnFull(letters):
-        print("This column is full")
+        print("This column is full. Try again")
         return -1,-1
     elif gameBoard[numRows-1][num] == placeholderSymbol:
         return numRows-1,num
@@ -138,16 +138,26 @@ def getInputCoords(letters):
 def isColumnFull(letters):
     return gameBoard[0][getNumberFromLetter(letters)] != placeholderSymbol
 
+def playerTurn(P):
+    if P == 1:
+        PChar = P1Char
+    else:
+        PChar = P2Char
+    isNotValid = True
+    while isNotValid:
+        PInput = getInput(P)
+        inputCoords = getInputCoords(PInput)
+        if inputCoords[0] != -1:
+            isNotValid = False
+    updateGameBoard(gameBoard, inputCoords[0], inputCoords[1], PChar)
+    printBoard = getNewPrintBoard(gameBoard)
+    print(printBoard)
+
 updateGameBoard(gameBoard, 0,1,P1Char)
 printBoard = getNewPrintBoard(gameBoard)
 for i in gameBoard:
     print(i)
 print(titleMessage + "\n" + printBoard)
 while True:
-    isNotValid = True
-    P1Input = getInput()
-    inputCoords = getInputCoords(P1Input)
-    print(inputCoords)
-    updateGameBoard(gameBoard, inputCoords[0], inputCoords[1], P1Char)
-    printBoard = getNewPrintBoard(gameBoard)
-    print(printBoard)
+    playerTurn(1)
+    playerTurn(2)
