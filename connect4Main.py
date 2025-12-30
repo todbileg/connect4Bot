@@ -40,7 +40,7 @@ for i in gameBoard:
 middleP1 = getCenteredText(P1Char, space, horizontalLength)
 middleP2 = getCenteredText(P2Char, space, horizontalLength)
 middleP0 = space * horizontalLength
-def getNewBoard(x,minusY, symbol):
+def getNewPrintBoard(gameBoard):
     board = ""
     for row in range(numRows):
         for col in range(numCols):
@@ -48,20 +48,27 @@ def getNewBoard(x,minusY, symbol):
         board += cornerSymbol + "\n"
         for vert in range(verticalLength):
             for col in range(numCols):
-                if row == minusY and col == x:
-                    if symbol == P1Char:
-                        cell = middleP1
-                    else:
-                        cell = middleP2
-                else:
+                symbolAtCoords = gameBoard[row][col]
+                if symbolAtCoords == horizontalSymbol:
                     cell = middleP0
+                elif symbolAtCoords == P1Char:
+                    cell = middleP1
+                else:
+                    cell = middleP2
                 board += verticalSymbol + cell
             board += verticalSymbol + "\n"
     for col in range(numCols):
         board += cornerSymbol + horizontalSymbol*horizontalLength
     board += cornerSymbol
     return board
+def updateGameBoard(gameBoard, x, y, symbol):
+    gameBoard[x][y] = symbol
 
-board = getNewBoard(0,2,"&")
+updateGameBoard(gameBoard, 1, 5, P1Char)
+updateGameBoard(gameBoard, 1, 2, P1Char)
+updateGameBoard(gameBoard, 1, 4, P1Char)
+updateGameBoard(gameBoard, 0, 0, P1Char)
 
-print(titleMessage + "\n" + board, end='')
+printBoard = getNewPrintBoard(gameBoard)
+
+print(titleMessage + "\n" + printBoard, end='')
