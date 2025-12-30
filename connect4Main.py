@@ -3,6 +3,7 @@ import time
 cornerSymbol = "+"
 horizontalSymbol = "-"
 verticalSymbol = "|"
+placeholderSymbol = "_"
 space = " "
 horizontalLength = 3
 verticalLength = 1
@@ -17,6 +18,7 @@ minInput = 2
 maxInput = 4
 yCoordsIndicator = (verticalLength - 1) //2
 numberToLetterMap = {i: chr(65 + i) for i in range(26)}
+letterToNumberMap = {value: key for key, value in numberToLetterMap.items()}
 
 #for the top row... im doing too much for this stupid thing
 def get_label(n):
@@ -37,7 +39,7 @@ def getCenteredText(middleSymbol, sideSymbol, width):
     return finalText
 
 #This is the welcome message
-widthOfBoard = (horizontalLength+1)*numCols+1
+widthOfBoard = (horizontalLength+1)*numCols+1+len(str(numRows))
 titleMessage = getCenteredText(message, welcomeSymbol,widthOfBoard)
 
 #game board and logic stuff here
@@ -46,8 +48,7 @@ for _ in range(numRows):
     gameBoard.append(list(range(numCols)))
 for i in range(len(gameBoard)):
     for j in range(len(gameBoard[i])):
-        gameBoard[i][j] = horizontalSymbol
-
+        gameBoard[i][j] = placeholderSymbol
 
 #This is printing out the board
 middleP1 = getCenteredText(P1Char, space, horizontalLength)
@@ -86,22 +87,67 @@ def getNewPrintBoard(gameBoard):
         board += cornerSymbol + horizontalSymbol*horizontalLength
     board += cornerSymbol
     return board
+
 def updateGameBoard(gameBoard, x, y, symbol):
     gameBoard[x][y] = symbol
-"""
-def checkInput(input):
+
+def getNumberFromLetter(input):
     lenOfInput = len(input)
-    if lenOfInput < minInput or lenOfInput > maxInput:
-"""
+    total = 0
+    for i in range(lenOfInput):
+        total += letterToNumberMap[input[i].upper()]*(26**(lenOfInput-i-1))
+    return total
+
+def isValidInput(input):
+    if not isinstance(input, str):
+        print("Input is not a string")
+        return False
+    elif not input.isalpha():
+        print("Input is not all letters")
+        return False
+    elif len(input) > len(letters[-1]) or numCols < getNumberFromLetter(input.upper()):
+        print("Input is out of bounds")
+        return False
+    else:
+        return True
+
+def getInput():
+    isNotValid = True
+    while isNotValid:
+        P1Input = input("Player 1's turn:")
+        isNotValid = not isValidInput(P1Input)
+    return P1Input
+
+def getInputCoords(letters):
+    num = getNumberFromLetter(letters)
+    if isColumnFull(letters):
+        print("This column is full")
+        return -1,-1
+    elif gameBoard[numRows-1][num] == placeholderSymbol:
+        return numRows-1,num
+    isNotFound = True
+    prev = 0
+    next = 1
+    while isNotFound:
+        if gameBoard[prev][num] == placeholderSymbol and gameBoard[next][num] != placeholderSymbol:
+            isNotFound = False
+        prev = next
+        next += 1
+    return prev-1,num
+
+def isColumnFull(letters):
+    return gameBoard[0][getNumberFromLetter(letters)] != placeholderSymbol
+
 updateGameBoard(gameBoard, 0,1,P1Char)
 printBoard = getNewPrintBoard(gameBoard)
-print(len(str(numRows)))
 for i in gameBoard:
     print(i)
-print(titleMessage + "\n" + printBoard, end='')
-# while True:
-#     try:
-#         P1Input = input("Player 1's turn:")
-#         checkInput(P1Input)
-#     except e:
-# first need to make the coordinate system
+print(titleMessage + "\n" + printBoard)
+while True:
+    isNotValid = True
+    P1Input = getInput()
+    inputCoords = getInputCoords(P1Input)
+    print(inputCoords)
+    updateGameBoard(gameBoard, inputCoords[0], inputCoords[1], P1Char)
+    printBoard = getNewPrintBoard(gameBoard)
+    print(printBoard)
