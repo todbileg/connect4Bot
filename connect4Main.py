@@ -13,6 +13,20 @@ welcomeSymbol = "^"
 message = "Play Connect 4!"
 P1Char = "X"
 P2Char = "O"
+minInput = 2
+maxInput = 4
+yCoordsIndicator = (verticalLength - 1) //2
+numberToLetterMap = {i: chr(65 + i) for i in range(26)}
+
+#for the top row... im doing too much for this stupid thing
+def get_label(n):
+    label = ""
+    while n >= 0:
+        label = numberToLetterMap[n % 26] + label
+        n = (n // 26) - 1
+    return label
+
+letters = [get_label(i) for i in range(numCols)]
 
 # important function for correct size texts
 def getCenteredText(middleSymbol, sideSymbol, width):
@@ -33,8 +47,7 @@ for _ in range(numRows):
 for i in range(len(gameBoard)):
     for j in range(len(gameBoard[i])):
         gameBoard[i][j] = horizontalSymbol
-for i in gameBoard:
-    print(i)
+
 
 #This is printing out the board
 middleP1 = getCenteredText(P1Char, space, horizontalLength)
@@ -42,11 +55,22 @@ middleP2 = getCenteredText(P2Char, space, horizontalLength)
 middleP0 = space * horizontalLength
 def getNewPrintBoard(gameBoard):
     board = ""
+    lenOfLeftWidth = len(str(numRows))
+    board += lenOfLeftWidth*space
+    for col in range(numCols):
+        board += (verticalSymbol +
+                  getCenteredText(letters[col], space, horizontalLength))
+    board += verticalSymbol + "\n"
     for row in range(numRows):
+        board += lenOfLeftWidth*horizontalSymbol
         for col in range(numCols):
             board += cornerSymbol + horizontalSymbol*horizontalLength
         board += cornerSymbol + "\n"
         for vert in range(verticalLength):
+            if vert == yCoordsIndicator:
+                board += getCenteredText(str(row+1), space, lenOfLeftWidth)
+            else:
+                board += lenOfLeftWidth*space
             for col in range(numCols):
                 symbolAtCoords = gameBoard[row][col]
                 if symbolAtCoords == horizontalSymbol:
@@ -57,18 +81,27 @@ def getNewPrintBoard(gameBoard):
                     cell = middleP2
                 board += verticalSymbol + cell
             board += verticalSymbol + "\n"
+    board += lenOfLeftWidth*horizontalSymbol
     for col in range(numCols):
         board += cornerSymbol + horizontalSymbol*horizontalLength
     board += cornerSymbol
     return board
 def updateGameBoard(gameBoard, x, y, symbol):
     gameBoard[x][y] = symbol
-
-updateGameBoard(gameBoard, 1, 5, P1Char)
-updateGameBoard(gameBoard, 1, 2, P1Char)
-updateGameBoard(gameBoard, 1, 4, P1Char)
-updateGameBoard(gameBoard, 0, 0, P1Char)
-
+"""
+def checkInput(input):
+    lenOfInput = len(input)
+    if lenOfInput < minInput or lenOfInput > maxInput:
+"""
+updateGameBoard(gameBoard, 0,1,P1Char)
 printBoard = getNewPrintBoard(gameBoard)
-
+print(len(str(numRows)))
+for i in gameBoard:
+    print(i)
 print(titleMessage + "\n" + printBoard, end='')
+# while True:
+#     try:
+#         P1Input = input("Player 1's turn:")
+#         checkInput(P1Input)
+#     except e:
+# first need to make the coordinate system
