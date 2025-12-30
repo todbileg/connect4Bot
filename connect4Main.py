@@ -154,8 +154,8 @@ def playerTurn(P):
     print(printBoard)
 
 printBoard = getNewPrintBoard(gameBoard)
-for i in gameBoard:
-    print(i)
+# for i in gameBoard:
+#     print(i)
 print(titleMessage + "\n" + printBoard)
 
 while True:
