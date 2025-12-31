@@ -159,7 +159,7 @@ def playerTurn(P):
         if inputCoords[0] != -1:
             isNotValid = False
     updateGameBoard(gameBoard, inputCoords[0], inputCoords[1], PChar)
-    isWinner = checkWinner(gameBoard, PChar)
+    isWinner = checkWinner(gameBoard, PChar, inputCoords[0], inputCoords[1])
     print(getNewPrintBoard(gameBoard))
     if isWinner[0]:
         print(f"Player {P} wins")
@@ -168,18 +168,16 @@ def playerTurn(P):
         return False
 
 
-def checkWinner(gameBoard, PSymbol):
-    for i in range(numRows):
-        for j in range(numCols):
-            if gameBoard[i][j] == PSymbol:
-                winCoords = checkWinnerHelper(gameBoard, (i, j), PSymbol)
-                if winCoords != -1:
-                    return True, winCoords
+def checkWinner(gameBoard, PSymbol, row, col):
+    if gameBoard[row][col] == PSymbol:
+        winCoords = checkWinnerHelper(gameBoard, (row, col), PSymbol)
+        if winCoords != -1:
+            return True, winCoords
     return False, -1
 
 
 def checkWinnerHelper(gameBoard, startCoords, PSymbol):
-    directions = [(1, 0), (0, 1), (1, 1), (-1, 1)]
+    directions = [(1, 0), (0, 1), (1, 1), (-1, 1), (-1, 0), (0, -1), (-1, -1), (1, -1)]
     for d in directions:
         result = checkWinnerHelperRec(gameBoard, [startCoords], 1, PSymbol, d)
         if result != -1:
