@@ -19,6 +19,8 @@ maxInput = 4
 yCoordsIndicator = (verticalLength - 1) //2
 numberToLetterMap = {i: chr(65 + i) for i in range(26)}
 letterToNumberMap = {value: key for key, value in numberToLetterMap.items()}
+LETTERSINALPHABET = 26
+connectHowMany = 4
 
 #for the top row... im doing too much for this stupid thing
 def get_label(n):
@@ -88,15 +90,18 @@ def getNewPrintBoard(gameBoard):
     board += cornerSymbol
     return board
 
+
 def updateGameBoard(gameBoard, x, y, symbol):
     gameBoard[x][y] = symbol
+
 
 def getNumberFromLetter(input):
     lenOfInput = len(input)
     total = 0
     for i in range(lenOfInput):
-        total += letterToNumberMap[input[i].upper()]*(26**(lenOfInput-i-1))
+        total += letterToNumberMap[input[i].upper()]*(LETTERSINALPHABET**(lenOfInput-i-1))
     return total
+
 
 def isValidInput(input):
     if not isinstance(input, str):
@@ -111,12 +116,14 @@ def isValidInput(input):
     else:
         return True
 
+
 def getInput(P):
     isNotValid = True
     while isNotValid:
         P1Input = input(f"Player {P}'s turn:")
         isNotValid = not isValidInput(P1Input)
     return P1Input
+
 
 def getInputCoords(letters):
     num = getNumberFromLetter(letters)
@@ -135,8 +142,10 @@ def getInputCoords(letters):
         next += 1
     return prev-1,num
 
+
 def isColumnFull(letters):
     return gameBoard[0][getNumberFromLetter(letters)] != placeholderSymbol
+
 
 def playerTurn(P):
     if P == 1:
@@ -150,8 +159,48 @@ def playerTurn(P):
         if inputCoords[0] != -1:
             isNotValid = False
     updateGameBoard(gameBoard, inputCoords[0], inputCoords[1], PChar)
-    printBoard = getNewPrintBoard(gameBoard)
-    print(printBoard)
+    isWinner = checkWinner(gameBoard, PChar)
+    print(getNewPrintBoard(gameBoard))
+    if isWinner[0]:
+        print(f"Player {P} wins")
+        return True
+    else:
+        return False
+
+
+def checkWinner(gameBoard, PSymbol):
+    for i in range(numRows):
+        for j in range(numCols):
+            if gameBoard[i][j] == PSymbol:
+                winCoords = checkWinnerHelper(gameBoard, (i, j), PSymbol)
+                if winCoords != -1:
+                    return True, winCoords
+    return False, -1
+
+
+def checkWinnerHelper(gameBoard, startCoords, PSymbol):
+    directions = [(1, 0), (0, 1), (1, 1), (-1, 1)]
+    for d in directions:
+        result = checkWinnerHelperRec(gameBoard, [startCoords], 1, PSymbol, d)
+        if result != -1:
+            return result
+    return -1
+
+
+def checkWinnerHelperRec(gameBoard, listMatches, numMatches, PSymbol, direction):
+    if numMatches == connectHowMany:
+        return listMatches
+
+    latestRow, latestCol = listMatches[-1]
+    nextRow = latestRow + direction[0]
+    nextCol = latestCol + direction[1]
+
+    if 0 <= nextRow < numRows and 0 <= nextCol < numCols:
+        if gameBoard[nextRow][nextCol] == PSymbol:
+            return checkWinnerHelperRec(gameBoard, listMatches + [(nextRow, nextCol)], numMatches + 1, PSymbol,
+                                        direction)
+
+    return -1
 
 printBoard = getNewPrintBoard(gameBoard)
 # for i in gameBoard:
@@ -159,5 +208,7 @@ printBoard = getNewPrintBoard(gameBoard)
 print(titleMessage + "\n" + printBoard)
 
 while True:
-    playerTurn(1)
-    playerTurn(2)
+    if playerTurn(1):
+        break
+    if playerTurn(2):
+        break
