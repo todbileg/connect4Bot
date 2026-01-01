@@ -1,4 +1,4 @@
-import time
+import random
 
 cornerSymbol = "+"
 horizontalSymbol = "-"
@@ -17,20 +17,19 @@ P2Char = "T"
 minInput = 2
 maxInput = 4
 yCoordsIndicator = (verticalLength - 1) //2
-numberToLetterMap = {i: chr(65 + i) for i in range(26)}
-letterToNumberMap = {value: key for key, value in numberToLetterMap.items()}
 LETTERSINALPHABET = 26
+numberToLetterMap = {i: chr(65 + i) for i in range(LETTERSINALPHABET)}
+letterToNumberMap = {value: key for key, value in numberToLetterMap.items()}
 connectHowMany = 4
 
 #for the top row... im doing too much for this stupid thing
-def get_label(n):
+def getLetterFromNumber(n):
     label = ""
     while n >= 0:
         label = numberToLetterMap[n % 26] + label
         n = (n // 26) - 1
     return label
 
-letters = [get_label(i) for i in range(numCols)]
 
 # important function for correct size texts
 def getCenteredText(middleSymbol, sideSymbol, width):
@@ -40,22 +39,7 @@ def getCenteredText(middleSymbol, sideSymbol, width):
         finalText += sideSymbol
     return finalText
 
-#This is the welcome message
-widthOfBoard = (horizontalLength+1)*numCols+1+len(str(numRows))
-titleMessage = getCenteredText(message, welcomeSymbol,widthOfBoard)
 
-#game board and logic stuff here
-gameBoard = []
-for _ in range(numRows):
-    gameBoard.append(list(range(numCols)))
-for i in range(len(gameBoard)):
-    for j in range(len(gameBoard[i])):
-        gameBoard[i][j] = placeholderSymbol
-
-#This is printing out the board
-middleP1 = getCenteredText(P1Char, space, horizontalLength)
-middleP2 = getCenteredText(P2Char, space, horizontalLength)
-middleP0 = space * horizontalLength
 def getNewPrintBoard(gameBoard):
     board = ""
     lenOfLeftWidth = len(str(numRows))
@@ -158,14 +142,7 @@ def playerTurn(P):
         inputCoords = getInputCoords(PInput)
         if inputCoords[0] != -1:
             isNotValid = False
-    updateGameBoard(gameBoard, inputCoords[0], inputCoords[1], PChar)
-    isWinner = checkWinner(gameBoard, PChar, inputCoords[0], inputCoords[1])
-    print(getNewPrintBoard(gameBoard))
-    if isWinner[0]:
-        print(f"Player {P} wins")
-        return True
-    else:
-        return False
+    return executeMove(P, PInput)
 
 
 def checkWinner(gameBoard, PSymbol, row, col):
@@ -200,13 +177,129 @@ def checkWinnerHelperRec(gameBoard, listMatches, numMatches, PSymbol, direction)
 
     return -1
 
+
+def getBotMoveEasy(gameBoard) -> tuple:
+    return getLetterFromNumber(random.choice(getNonFullCols(gameBoard)))
+
+def getNonFullCols(gameBoard):
+    """
+    returns integers [0,1,2,3,4, ... ] where 0 maps to A in another function
+    """
+    nonFullCols = []
+    for i in range(numCols):
+        if gameBoard[0][i] == placeholderSymbol:
+            nonFullCols.append(i)
+    return nonFullCols
+
+
+def getValidUserInput(prompt, listOfValidItems):
+    isNotValid = True
+    print(prompt)
+    while isNotValid:
+        userInput = input("Input: ")
+        if userInput in listOfValidItems:
+            isNotValid = False
+        else:
+            print("Not a valid input. Try again.")
+    return userInput
+
+
+def executeMove(P, moveLetter):
+    PChar = P1Char if P == 1 else P2Char
+    inputCoords = getInputCoords(moveLetter)
+
+    updateGameBoard(gameBoard, inputCoords[0], inputCoords[1], PChar)
+    isWinner = checkWinner(gameBoard, PChar, inputCoords[0], inputCoords[1])
+
+    print(getNewPrintBoard(gameBoard))
+
+    if isWinner[0]:
+        print(f"Player {P} wins!")
+        return True
+    elif len(getNonFullCols(gameBoard)) == 0:
+        print("Board is full!")
+        return True
+    return False
+
+
+# def getBotMoveMedium(gameBoard):
+#     1
+
+
+# def getBotMoveHard(gameBoard):
+#     1
+
+letters = [getLetterFromNumber(i) for i in range(numCols)]
+
+#This is the welcome message
+widthOfBoard = (horizontalLength+1)*numCols+1+len(str(numRows))
+titleMessage = getCenteredText(message, welcomeSymbol,widthOfBoard)
+
+#game board and logic stuff here
+gameBoard = []
+for _ in range(numRows):
+    gameBoard.append(list(range(numCols)))
+for i in range(len(gameBoard)):
+    for j in range(len(gameBoard[i])):
+        gameBoard[i][j] = placeholderSymbol
+
+#This is printing out the board
+middleP1 = getCenteredText(P1Char, space, horizontalLength)
+middleP2 = getCenteredText(P2Char, space, horizontalLength)
+middleP0 = space * horizontalLength
+
 printBoard = getNewPrintBoard(gameBoard)
 # for i in gameBoard:
 #     print(i)
 print(titleMessage + "\n" + printBoard)
 
-while True:
-    if playerTurn(1):
-        break
-    if playerTurn(2):
-        break
+gameType = getValidUserInput("Input 1 for Player vs Player\nInput 2 for Player vs Bot",
+                             ["1","2"])
+if gameType == "1":
+    while True:
+        if playerTurn(1):
+            break
+        if playerTurn(2):
+            break
+else:
+    #bot here ask which difficulty
+    whichPlayer = getValidUserInput("Input 1 to play as player 1\nInput 2 to play as player 2",
+                                    ["1", "2"])
+    difficultyPrompt = "Input 1 for easy bot\nInput 2 for medium bot\nInput 3 for hard bot"
+    botDifficulty = getValidUserInput(difficultyPrompt, ["1", "2", "3"])
+
+    humanTurnNum = int(whichPlayer)
+    botTurnNum = 2 if humanTurnNum == 1 else 1
+    humanTurnNum = int(whichPlayer)
+    botTurnNum = 2 if humanTurnNum == 1 else 1
+
+    while True:
+        if botTurnNum == 1:
+            print("Bot's turn...")
+            if botDifficulty == "1":
+                botMove = getBotMoveEasy(gameBoard)
+            # elif botDifficulty == "2":
+            #     botMove = getBotMoveMedium(gameBoard)
+            # else:
+            #     botMove = getBotMoveHard(gameBoard)
+
+            if executeMove(1, botMove):
+                break
+        else:
+            if playerTurn(1):
+                break
+
+        if botTurnNum == 2:
+            print("Bot's turn...")
+            if botDifficulty == "1":
+                botMove = getBotMoveEasy(gameBoard)
+            # elif botDifficulty == "2":
+            #     botMove = getBotMoveMedium(gameBoard)
+            # else:
+            #     botMove = getBotMoveHard(gameBoard)
+
+            if executeMove(2, botMove):
+                break
+        else:
+            if playerTurn(2):
+                break
