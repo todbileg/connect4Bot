@@ -1,4 +1,5 @@
 import random
+from pydoc import describe
 
 cornerSymbol = "+"
 horizontalSymbol = "-"
@@ -21,6 +22,9 @@ LETTERSINALPHABET = 26
 numberToLetterMap = {i: chr(65 + i) for i in range(LETTERSINALPHABET)}
 letterToNumberMap = {value: key for key, value in numberToLetterMap.items()}
 connectHowMany = 4
+directions = [(1, 0), (0, 1), (1, 1), (-1, 1), (-1, 0), (0, -1), (-1, -1), (1, -1)]
+listOfPlayer1Moves = []
+listOfPlayer2Moves = []
 
 #for the top row... im doing too much for this stupid thing
 def getLetterFromNumber(n):
@@ -75,8 +79,12 @@ def getNewPrintBoard(gameBoard):
     return board
 
 
-def updateGameBoard(gameBoard, x, y, symbol):
+def updateGameBoard(gameBoard, x, y, symbol, P):
     gameBoard[x][y] = symbol
+    if P == 1:
+        listOfPlayer1Moves.append((x,y))
+    else:
+        listOfPlayer2Moves.append((x,y))
 
 
 def getNumberFromLetter(input):
@@ -146,36 +154,43 @@ def playerTurn(P):
 
 
 def checkWinner(gameBoard, PSymbol, row, col):
-    if gameBoard[row][col] == PSymbol:
-        winCoords = checkWinnerHelper(gameBoard, (row, col), PSymbol)
-        if winCoords != -1:
-            return True, winCoords
+    # These pairs represent opposite directions:
+    # (Horizontal), (Vertical), (Diagonal /), (Diagonal \)
+    direction_pairs = [
+        ((0, 1), (0, -1)),  # Left/Right
+        ((1, 0), (-1, 0)),  # Down/Up
+        ((1, 1), (-1, -1)),  # Down-Right/Up-Left
+        ((-1, 1), (1, -1))  # Down-Left/Up-Right
+    ]
+
+    for d1, d2 in direction_pairs:
+        # Count matches in the first direction
+        matches1 = countMatchesInDirection(gameBoard, row, col, d1[0], d1[1], PSymbol)
+        # Count matches in the opposite direction
+        matches2 = countMatchesInDirection(gameBoard, row, col, d2[0], d2[1], PSymbol)
+
+        # Add them up + 1 (the piece we just placed)
+        total_count = 1 + len(matches1) + len(matches2)
+
+        if total_count >= connectHowMany:
+            # Combine all coordinates for the return value
+            return True, matches1 + [(row, col)] + matches2
+
     return False, -1
 
 
-def checkWinnerHelper(gameBoard, startCoords, PSymbol):
-    directions = [(1, 0), (0, 1), (1, 1), (-1, 1), (-1, 0), (0, -1), (-1, -1), (1, -1)]
-    for d in directions:
-        result = checkWinnerHelperRec(gameBoard, [startCoords], 1, PSymbol, d)
-        if result != -1:
-            return result
-    return -1
+def countMatchesInDirection(gameBoard, startRow, startCol, dRow, dCol, PSymbol):
+    matches = []
+    currRow, currCol = startRow + dRow, startCol + dCol
 
-
-def checkWinnerHelperRec(gameBoard, listMatches, numMatches, PSymbol, direction):
-    if numMatches == connectHowMany:
-        return listMatches
-
-    latestRow, latestCol = listMatches[-1]
-    nextRow = latestRow + direction[0]
-    nextCol = latestCol + direction[1]
-
-    if 0 <= nextRow < numRows and 0 <= nextCol < numCols:
-        if gameBoard[nextRow][nextCol] == PSymbol:
-            return checkWinnerHelperRec(gameBoard, listMatches + [(nextRow, nextCol)], numMatches + 1, PSymbol,
-                                        direction)
-
-    return -1
+    while 0 <= currRow < numRows and 0 <= currCol < numCols:
+        if gameBoard[currRow][currCol] == PSymbol:
+            matches.append((currRow, currCol))
+            currRow += dRow
+            currCol += dCol
+        else:
+            break
+    return matches
 
 
 def getBotMoveEasy(gameBoard) -> tuple:
@@ -208,7 +223,7 @@ def executeMove(P, moveLetter):
     PChar = P1Char if P == 1 else P2Char
     inputCoords = getInputCoords(moveLetter)
 
-    updateGameBoard(gameBoard, inputCoords[0], inputCoords[1], PChar)
+    updateGameBoard(gameBoard, inputCoords[0], inputCoords[1], PChar, P)
     isWinner = checkWinner(gameBoard, PChar, inputCoords[0], inputCoords[1])
 
     print(getNewPrintBoard(gameBoard))
@@ -222,12 +237,118 @@ def executeMove(P, moveLetter):
     return False
 
 
-# def getBotMoveMedium(gameBoard):
-#     1
+def getWinningCoords(gameBoard, P, PChar):
+    if P == 1:
+        listOfPlayerMoves = listOfPlayer1Moves
+    else:
+        listOfPlayerMoves = listOfPlayer2Moves
+    for location in listOfPlayerMoves:
+        for d in directions:
+            result = getWinningCoordsRec(gameBoard, PChar, d, [location], 1)
+            if result != -1:
+                return True, result
+    return False, -1
 
 
-# def getBotMoveHard(gameBoard):
-#     1
+def getWinningCoordsRec(gameBoard, PChar, d, listOfLocations, numMatches):
+    if numMatches == connectHowMany-1:
+        result = movePossibleInDirection(gameBoard, d, listOfLocations[-1])
+        if result[0]:
+            return result[1]
+        else:
+            return -1
+    latestRow, latestCol = listOfLocations[-1]
+    nextRow = latestRow + d[0]
+    nextCol = latestCol + d[1]
+    if 0 <= nextRow < numRows and 0 <= nextCol < numCols:
+        if gameBoard[nextRow][nextCol] == PChar:
+            return getWinningCoordsRec(gameBoard, PChar, d, listOfLocations + [(nextRow, nextCol)], numMatches + 1)
+    return -1
+
+
+def movePossibleInDirection(gameBoard, d, tupleOfLocation):
+    desiredRow = tupleOfLocation[0] + d[0]
+    desiredCol = tupleOfLocation[1] + d[1]
+    if 0 <= desiredRow < numRows and 0 <= desiredCol < numCols:
+        belowDesiredRow = desiredRow + 1
+        if ((belowDesiredRow == numRows or gameBoard[belowDesiredRow][desiredCol] != placeholderSymbol) and
+                gameBoard[desiredRow][desiredCol] == placeholderSymbol):
+            return True, (desiredRow, desiredCol)
+
+    return False, (-1,-1)
+
+
+def getBotMoveMedium(gameBoard, humanP, humanChar):
+    # determining who is who
+    botP = 2 if humanP == 1 else 1
+    botChar = P2Char if botP == 2 else P1Char
+
+    # 1. ATTACK: Check if Bot can win right now
+    winningColumn = findBestMoveForPlayer(gameBoard, botChar)
+    if winningColumn != -1:
+        return getLetterFromNumber(winningColumn)
+
+    # 2. DEFENSE: Check if other player is about to win
+    blockingColumn = findBestMoveForPlayer(gameBoard, humanChar)
+    if blockingColumn != -1:
+        return getLetterFromNumber(blockingColumn)
+
+    # 3. Random move if no immediate threats/wins
+    return getBotMoveEasy(gameBoard)
+
+
+def findBestMoveForPlayer(gameBoard, PChar):
+    # Check Horizontal Windows
+    for r in range(numRows):
+        for c in range(numCols - (connectHowMany-1)):
+            window = [gameBoard[r][c + i] for i in range(connectHowMany)]
+            coords = [(r, c + i) for i in range(connectHowMany)]
+            col = checkWindow(window, coords, PChar)
+            if col != -1: return col
+
+    # Check Vertical Windows
+    for r in range(numRows - (connectHowMany-1)):
+        for c in range(numCols):
+            window = [gameBoard[r + i][c] for i in range(connectHowMany)]
+            coords = [(r + i, c) for i in range(connectHowMany)]
+            col = checkWindow(window, coords, PChar)
+            if col != -1: return col
+
+    # Check Positive Diagonal Windows (/)
+    for r in range(numRows - (connectHowMany-1)):
+        for c in range(numCols - (connectHowMany-1)):
+            window = [gameBoard[r + (connectHowMany-1) - i][c + i] for i in range(connectHowMany)]
+            coords = [(r + (connectHowMany-1) - i, c + i) for i in range(connectHowMany)]
+            col = checkWindow(window, coords, PChar)
+            if col != -1: return col
+
+    # Check Negative Diagonal Windows (\)
+    for r in range(numRows - (connectHowMany-1)):
+        for c in range(numCols - (connectHowMany-1)):
+            window = [gameBoard[r + i][c + i] for i in range(connectHowMany)]
+            coords = [(r + i, c + i) for i in range(connectHowMany)]
+            col = checkWindow(window, coords, PChar)
+            if col != -1: return col
+
+    return -1
+
+
+def checkWindow(window, coords, PChar):
+    # We are looking for 3 of the player's pieces and 1 empty spot
+    if window.count(PChar) == connectHowMany-1 and window.count(placeholderSymbol) == 1:
+        emptyIndex = window.index(placeholderSymbol)
+        emptySpotCoords = coords[emptyIndex]
+
+        # check if the move is physically possible (gravity)
+        r, c = emptySpotCoords
+
+        # Is this spot supported?
+        if r == numRows - 1:  # Bottom row is always supported
+            return c
+        elif gameBoard[r + 1][c] != placeholderSymbol:  # Spot below is occupied
+            return c
+
+    return -1
 
 letters = [getLetterFromNumber(i) for i in range(numCols)]
 
@@ -270,20 +391,21 @@ else:
 
     humanTurnNum = int(whichPlayer)
     botTurnNum = 2 if humanTurnNum == 1 else 1
-    humanTurnNum = int(whichPlayer)
-    botTurnNum = 2 if humanTurnNum == 1 else 1
+
+    print(humanTurnNum)
+    print(botTurnNum)
 
     while True:
         if botTurnNum == 1:
             print("Bot's turn...")
             if botDifficulty == "1":
-                botMove = getBotMoveEasy(gameBoard)
-            # elif botDifficulty == "2":
-            #     botMove = getBotMoveMedium(gameBoard)
+                botMoveLetter = getBotMoveEasy(gameBoard)
+            elif botDifficulty == "2":
+                botMoveLetter = getBotMoveMedium(gameBoard, humanTurnNum, P2Char)
             # else:
-            #     botMove = getBotMoveHard(gameBoard)
+            #     botMoveLetter = getBotMoveHard(gameBoard, humanTurnNum, P2Char)
 
-            if executeMove(1, botMove):
+            if executeMove(1, botMoveLetter):
                 break
         else:
             if playerTurn(1):
@@ -292,13 +414,13 @@ else:
         if botTurnNum == 2:
             print("Bot's turn...")
             if botDifficulty == "1":
-                botMove = getBotMoveEasy(gameBoard)
-            # elif botDifficulty == "2":
-            #     botMove = getBotMoveMedium(gameBoard)
+                botMoveLetter = getBotMoveEasy(gameBoard)
+            elif botDifficulty == "2":
+                botMoveLetter = getBotMoveMedium(gameBoard, humanTurnNum, P1Char)
             # else:
-            #     botMove = getBotMoveHard(gameBoard)
+            #     botMoveLetter = getBotMoveHard(gameBoard, humanTurnNum, P1Char)
 
-            if executeMove(2, botMove):
+            if executeMove(2, botMoveLetter):
                 break
         else:
             if playerTurn(2):
