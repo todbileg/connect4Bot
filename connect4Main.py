@@ -1,8 +1,9 @@
 import random
 from colorama import Fore, Style
+import copy
 
 P1Char = Fore.RED + "X" + Style.RESET_ALL
-P2Char = Fore.YELLOW + "T" + Style.RESET_ALL
+P2Char = Fore.YELLOW + "O" + Style.RESET_ALL
 cornerSymbol = "+"
 horizontalSymbol = "-"
 verticalSymbol = "|"
@@ -26,7 +27,7 @@ directions = [(1, 0), (0, 1), (1, 1), (-1, 1), (-1, 0), (0, -1), (-1, -1), (1, -
 listOfPlayer1Moves = []
 listOfPlayer2Moves = []
 
-def getNewPrintBoard(gameBoard):
+def getNewPrintBoard(funcGameBoard):
     board = ""
     lenOfLeftWidth = len(str(numRows))
     board += lenOfLeftWidth*space
@@ -45,7 +46,7 @@ def getNewPrintBoard(gameBoard):
             else:
                 board += lenOfLeftWidth*space
             for col in range(numCols):
-                symbolAtCoords = gameBoard[row][col]
+                symbolAtCoords = funcGameBoard[row][col]
                 if symbolAtCoords == placeholderSymbol:
                     cell = middleP0
                 elif symbolAtCoords == P1Char:
@@ -78,12 +79,12 @@ def getCenteredText(middleSymbol, sideSymbol, width):
     return finalText
 
 
-def updateGameBoard(gameBoard, x, y, symbol, P):
-    gameBoard[x][y] = symbol
+def updateFuncGameBoard(funcGameBoard, row, col, symbol, P):
+    funcGameBoard[row][col] = symbol
     if P == 1:
-        listOfPlayer1Moves.append((x,y))
+        listOfPlayer1Moves.append((row,col))
     else:
-        listOfPlayer2Moves.append((x,y))
+        listOfPlayer2Moves.append((row,col))
 
 
 def getNumberFromLetter(input):
@@ -116,18 +117,18 @@ def getInput(P):
     return P1Input
 
 
-def getInputCoords(letters):
-    num = getNumberFromLetter(letters)
-    if isColumnFull(letters):
+def getInputCoords(letter):
+    num = getNumberFromLetter(letter)
+    if isColumnFull(letter):
         print("This column is full. Try again")
         return -1,-1
-    elif gameBoard[numRows-1][num] == placeholderSymbol:
+    elif funcGameBoard[numRows-1][num] == placeholderSymbol:
         return numRows-1,num
     isNotFound = True
     prev = 0
     next = 1
     while isNotFound:
-        if gameBoard[prev][num] == placeholderSymbol and gameBoard[next][num] != placeholderSymbol:
+        if funcGameBoard[prev][num] == placeholderSymbol and funcGameBoard[next][num] != placeholderSymbol:
             isNotFound = False
         prev = next
         next += 1
@@ -135,7 +136,7 @@ def getInputCoords(letters):
 
 
 def isColumnFull(letters):
-    return gameBoard[0][getNumberFromLetter(letters)] != placeholderSymbol
+    return funcGameBoard[0][getNumberFromLetter(letters)] != placeholderSymbol
 
 
 def playerTurn(P):
@@ -152,7 +153,7 @@ def playerTurn(P):
     return executeMove(P, PInput)
 
 
-def checkWinner(gameBoard, PSymbol, row, col):
+def checkWinner(funcGameBoard, PSymbol, row, col):
     # These pairs represent opposite directions:
     # (Horizontal), (Vertical), (Diagonal /), (Diagonal \)
     direction_pairs = [
@@ -164,9 +165,9 @@ def checkWinner(gameBoard, PSymbol, row, col):
 
     for d1, d2 in direction_pairs:
         # Count matches in the first direction
-        matches1 = countMatchesInDirection(gameBoard, row, col, d1[0], d1[1], PSymbol)
+        matches1 = countMatchesInDirection(funcGameBoard, row, col, d1[0], d1[1], PSymbol)
         # Count matches in the opposite direction
-        matches2 = countMatchesInDirection(gameBoard, row, col, d2[0], d2[1], PSymbol)
+        matches2 = countMatchesInDirection(funcGameBoard, row, col, d2[0], d2[1], PSymbol)
 
         # Add them up + 1 (the piece we just placed)
         total_count = 1 + len(matches1) + len(matches2)
@@ -178,12 +179,12 @@ def checkWinner(gameBoard, PSymbol, row, col):
     return False, -1
 
 
-def countMatchesInDirection(gameBoard, startRow, startCol, dRow, dCol, PSymbol):
+def countMatchesInDirection(funcGameBoard, startRow, startCol, dRow, dCol, PSymbol):
     matches = []
     currRow, currCol = startRow + dRow, startCol + dCol
 
     while 0 <= currRow < numRows and 0 <= currCol < numCols:
-        if gameBoard[currRow][currCol] == PSymbol:
+        if funcGameBoard[currRow][currCol] == PSymbol:
             matches.append((currRow, currCol))
             currRow += dRow
             currCol += dCol
@@ -192,16 +193,16 @@ def countMatchesInDirection(gameBoard, startRow, startCol, dRow, dCol, PSymbol):
     return matches
 
 
-def getBotMoveEasy(gameBoard) -> tuple:
-    return getLetterFromNumber(random.choice(getNonFullCols(gameBoard)))
+def getBotMoveEasy(funcGameBoard) -> tuple:
+    return getLetterFromNumber(random.choice(getNonFullCols(funcGameBoard)))
 
-def getNonFullCols(gameBoard):
+def getNonFullCols(funcGameBoard):
     """
     returns integers [0,1,2,3,4, ... ] where 0 maps to A in another function
     """
     nonFullCols = []
     for i in range(numCols):
-        if gameBoard[0][i] == placeholderSymbol:
+        if funcGameBoard[0][i] == placeholderSymbol:
             nonFullCols.append(i)
     return nonFullCols
 
@@ -222,36 +223,36 @@ def executeMove(P, moveLetter):
     PChar = P1Char if P == 1 else P2Char
     inputCoords = getInputCoords(moveLetter)
 
-    updateGameBoard(gameBoard, inputCoords[0], inputCoords[1], PChar, P)
-    isWinner = checkWinner(gameBoard, PChar, inputCoords[0], inputCoords[1])
+    updateFuncGameBoard(funcGameBoard, inputCoords[0], inputCoords[1], PChar, P)
+    isWinner = checkWinner(funcGameBoard, PChar, inputCoords[0], inputCoords[1])
 
-    print("\n"*15 + getNewPrintBoard(gameBoard))
+    print("\n"*15 + getNewPrintBoard(funcGameBoard))
 
     if isWinner[0]:
         print(f"Player {P} wins!")
         return True
-    elif len(getNonFullCols(gameBoard)) == 0:
+    elif len(getNonFullCols(funcGameBoard)) == 0:
         print("Board is full!")
         return True
     return False
 
 
-def getWinningCoords(gameBoard, P, PChar):
+def getWinningCoords(funcGameBoard, P, PChar):
     if P == 1:
         listOfPlayerMoves = listOfPlayer1Moves
     else:
         listOfPlayerMoves = listOfPlayer2Moves
     for location in listOfPlayerMoves:
         for d in directions:
-            result = getWinningCoordsRec(gameBoard, PChar, d, [location], 1)
+            result = getWinningCoordsRec(funcGameBoard, PChar, d, [location], 1)
             if result != -1:
                 return True, result
     return False, -1
 
 
-def getWinningCoordsRec(gameBoard, PChar, d, listOfLocations, numMatches):
+def getWinningCoordsRec(funcGameBoard, PChar, d, listOfLocations, numMatches):
     if numMatches == connectHowMany-1:
-        result = movePossibleInDirection(gameBoard, d, listOfLocations[-1])
+        result = movePossibleInDirection(funcGameBoard, d, listOfLocations[-1])
         if result[0]:
             return result[1]
         else:
@@ -260,80 +261,88 @@ def getWinningCoordsRec(gameBoard, PChar, d, listOfLocations, numMatches):
     nextRow = latestRow + d[0]
     nextCol = latestCol + d[1]
     if 0 <= nextRow < numRows and 0 <= nextCol < numCols:
-        if gameBoard[nextRow][nextCol] == PChar:
-            return getWinningCoordsRec(gameBoard, PChar, d, listOfLocations + [(nextRow, nextCol)], numMatches + 1)
+        if funcGameBoard[nextRow][nextCol] == PChar:
+            return getWinningCoordsRec(funcGameBoard, PChar, d, listOfLocations + [(nextRow, nextCol)], numMatches + 1)
     return -1
 
 
-def movePossibleInDirection(gameBoard, d, tupleOfLocation):
+def movePossibleInDirection(funcGameBoard, d, tupleOfLocation):
     desiredRow = tupleOfLocation[0] + d[0]
     desiredCol = tupleOfLocation[1] + d[1]
     if 0 <= desiredRow < numRows and 0 <= desiredCol < numCols:
         belowDesiredRow = desiredRow + 1
-        if ((belowDesiredRow == numRows or gameBoard[belowDesiredRow][desiredCol] != placeholderSymbol) and
-                gameBoard[desiredRow][desiredCol] == placeholderSymbol):
+        if ((belowDesiredRow == numRows or funcGameBoard[belowDesiredRow][desiredCol] != placeholderSymbol) and
+                funcGameBoard[desiredRow][desiredCol] == placeholderSymbol):
             return True, (desiredRow, desiredCol)
 
     return False, (-1,-1)
 
 
-def getBotMoveMedium(gameBoard, humanP, humanChar):
+def getBotMoveMedium(funcGameBoard, humanP, humanChar):
     # determining who is who
     botP = 2 if humanP == 1 else 1
     botChar = P2Char if botP == 2 else P1Char
 
-    # 1. ATTACK: Check if Bot can win right now
-    winningColumn = findBestMoveForPlayer(gameBoard, botChar)
+    # 1. Attack: Check if Bot can win right now
+    winningColumn = findBestMoveForPlayer(funcGameBoard, botChar)
     if winningColumn != -1:
-        return getLetterFromNumber(winningColumn)
+        return getLetterFromNumber(winningColumn[0])
 
-    # 2. DEFENSE: Check if other player is about to win
-    blockingColumn = findBestMoveForPlayer(gameBoard, humanChar)
+    # 2. Defense: Check if other player is about to win
+    blockingColumn = findBestMoveForPlayer(funcGameBoard, humanChar)
     if blockingColumn != -1:
-        return getLetterFromNumber(blockingColumn)
+        return getLetterFromNumber(blockingColumn[0])
 
     # 3. Random move if no immediate threats/wins
-    return getBotMoveEasy(gameBoard)
+    return getBotMoveEasy(funcGameBoard)
 
 
-def findBestMoveForPlayer(gameBoard, PChar):
-    # Check Horizontal Windows
+def findBestMoveForPlayer(funcGameBoard, PChar):
+    bestMoves = []
+    # Check Horizontal Windows (-)
     for r in range(numRows):
         for c in range(numCols - (connectHowMany-1)):
-            window = [gameBoard[r][c + i] for i in range(connectHowMany)]
+            window = [funcGameBoard[r][c + i] for i in range(connectHowMany)]
             coords = [(r, c + i) for i in range(connectHowMany)]
             col = checkWindow(window, coords, PChar)
-            if col != -1: return col
+            if col != -1:
+                bestMoves.append(col)
 
-    # Check Vertical Windows
+    # Check Vertical Windows (|)
     for r in range(numRows - (connectHowMany-1)):
         for c in range(numCols):
-            window = [gameBoard[r + i][c] for i in range(connectHowMany)]
+            window = [funcGameBoard[r + i][c] for i in range(connectHowMany)]
             coords = [(r + i, c) for i in range(connectHowMany)]
             col = checkWindow(window, coords, PChar)
-            if col != -1: return col
+            if col != -1:
+                bestMoves.append(col)
 
     # Check Positive Diagonal Windows (/)
     for r in range(numRows - (connectHowMany-1)):
         for c in range(numCols - (connectHowMany-1)):
-            window = [gameBoard[r + (connectHowMany-1) - i][c + i] for i in range(connectHowMany)]
+            window = [funcGameBoard[r + (connectHowMany-1) - i][c + i] for i in range(connectHowMany)]
             coords = [(r + (connectHowMany-1) - i, c + i) for i in range(connectHowMany)]
             col = checkWindow(window, coords, PChar)
-            if col != -1: return col
+            if col != -1:
+                bestMoves.append(col)
 
     # Check Negative Diagonal Windows (\)
     for r in range(numRows - (connectHowMany-1)):
         for c in range(numCols - (connectHowMany-1)):
-            window = [gameBoard[r + i][c + i] for i in range(connectHowMany)]
+            window = [funcGameBoard[r + i][c + i] for i in range(connectHowMany)]
             coords = [(r + i, c + i) for i in range(connectHowMany)]
             col = checkWindow(window, coords, PChar)
-            if col != -1: return col
+            if col != -1:
+                bestMoves.append(col)
 
-    return -1
+    if len(bestMoves) != 0:
+        return bestMoves
+    else:
+        return -1
 
 
 def checkWindow(window, coords, PChar):
-    # We are looking for 3 of the player's pieces and 1 empty spot
+    # We are looking for connectHowMany-1 of the player's pieces and 1 empty spot
     if window.count(PChar) == connectHowMany-1 and window.count(placeholderSymbol) == 1:
         emptyIndex = window.index(placeholderSymbol)
         emptySpotCoords = coords[emptyIndex]
@@ -344,10 +353,90 @@ def checkWindow(window, coords, PChar):
         # Is this spot supported?
         if r == numRows - 1:  # Bottom row is always supported
             return c
-        elif gameBoard[r + 1][c] != placeholderSymbol:  # Spot below is occupied
+        elif funcGameBoard[r + 1][c] != placeholderSymbol:  # Spot below is occupied
             return c
 
     return -1
+
+
+def getListOfSafeLetters(funcGameBoard, botChar, botP, humanChar):
+    nonFullCols = getNonFullCols(funcGameBoard)
+    safeLetters = []
+    for colIndex in nonFullCols:
+        tempBoard = copy.deepcopy(funcGameBoard)
+        testLetter = getLetterFromNumber(colIndex)
+        coords = getInputCoords(testLetter)
+        updateFuncGameBoard(tempBoard, coords[0], coords[1], botChar, botP)
+        if botP == 1:
+            listOfPlayer1Moves.pop(-1)
+        else:
+            listOfPlayer2Moves.pop(-1)
+        humanWinningColumn = findBestMoveForPlayer(tempBoard, humanChar)
+        if humanWinningColumn == -1:
+            safeLetters.append(testLetter)
+    return safeLetters
+
+
+def getBotMoveHard(funcGameBoard, humanP, humanChar):
+    # determining who is who
+    botP = 2 if humanP == 1 else 1
+    botChar = P2Char if botP == 2 else P1Char
+
+    # 1. Attack: Check if Bot can win right now
+    winningColumn = findBestMoveForPlayer(funcGameBoard, botChar)
+    if winningColumn != -1:
+        return getLetterFromNumber(winningColumn[0])
+
+    # 2. Defense: Check if other player is about to win
+    blockingColumn = findBestMoveForPlayer(funcGameBoard, humanChar)
+    if blockingColumn != -1:
+        return getLetterFromNumber(blockingColumn[0])
+
+    # 3. Precaution: Get all the moves that will not allow the other player to win
+    safeLetters = getListOfSafeLetters(funcGameBoard, botChar, botP, humanChar)
+    lenSafe = len(safeLetters)
+    if lenSafe == 1: #only one safe move so just return that
+        return safeLetters[0]
+    elif lenSafe == 0: #no safe moves means we lost so just return a random move
+        return getBotMoveEasy(funcGameBoard)
+
+    # 3.5. Trap: Make a connectHowMany-1 in a line
+    for safeLetter in safeLetters:
+        tempBoard = copy.deepcopy(funcGameBoard)
+        testLetter = safeLetter
+        coords = getInputCoords(testLetter)
+        updateFuncGameBoard(tempBoard, coords[0], coords[1], botChar, botP)
+        if botP == 1:
+            listOfPlayer1Moves.pop(-1)
+        else:
+            listOfPlayer2Moves.pop(-1)
+        bestMoves = findBestMoveForPlayer(tempBoard, botChar)
+        if bestMoves == -1:
+            pass
+        elif len(bestMoves) >= 2:
+            return testLetter
+
+    #write the 7 shape to win later
+
+
+    middleLetters = getMiddleThreeLetters()
+    validMiddle = [middleLetter for middleLetter in middleLetters if middleLetter in safeLetters]
+    if len(validMiddle) >= 1:
+        return random.choice(validMiddle)
+
+    # Random move after this
+    #what other moves should i consider this bot do
+    return random.choice(safeLetters)
+
+
+def getMiddleThreeLetters():
+    middleIndex = numCols // 2
+    return getLetterFromNumber(middleIndex-1), getLetterFromNumber(middleIndex), getLetterFromNumber(middleIndex+1)
+
+
+def getMiddleLetter():
+    middleIndex = numCols // 2
+    return getLetterFromNumber(middleIndex)
 
 letters = [getLetterFromNumber(i) for i in range(numCols)]
 
@@ -356,21 +445,19 @@ widthOfBoard = (horizontalLength+1)*numCols+1+len(str(numRows))
 titleMessage = getCenteredText(message, welcomeSymbol,widthOfBoard)
 
 #game board and logic stuff here
-gameBoard = []
+funcGameBoard = []
 for _ in range(numRows):
-    gameBoard.append(list(range(numCols)))
-for i in range(len(gameBoard)):
-    for j in range(len(gameBoard[i])):
-        gameBoard[i][j] = placeholderSymbol
+    funcGameBoard.append(list(range(numCols)))
+for i in range(len(funcGameBoard)):
+    for j in range(len(funcGameBoard[i])):
+        funcGameBoard[i][j] = placeholderSymbol
 
 #This is printing out the board
 middleP1 = getCenteredText(P1Char, space, horizontalLength + len(P1Char) - 1)
 middleP2 = getCenteredText(P2Char, space, horizontalLength + len(P1Char) - 1)
 middleP0 = space * horizontalLength
 
-printBoard = getNewPrintBoard(gameBoard)
-# for i in gameBoard:
-#     print(i)
+printBoard = getNewPrintBoard(funcGameBoard)
 print(titleMessage + "\n" + printBoard)
 
 gameType = getValidUserInput("Input 1 for Player vs Player\nInput 2 for Player vs Bot",
@@ -391,18 +478,19 @@ else:
     humanTurnNum = int(whichPlayer)
     botTurnNum = 2 if humanTurnNum == 1 else 1
 
-    print(humanTurnNum)
-    print(botTurnNum)
+    if botTurnNum == 1 and botDifficulty == "3":
+        executeMove(1, getMiddleLetter())
+        playerTurn(2)
 
     while True:
         if botTurnNum == 1:
             print("Bot's turn...")
             if botDifficulty == "1":
-                botMoveLetter = getBotMoveEasy(gameBoard)
+                botMoveLetter = getBotMoveEasy(funcGameBoard)
             elif botDifficulty == "2":
-                botMoveLetter = getBotMoveMedium(gameBoard, humanTurnNum, P2Char)
-            # else:
-            #     botMoveLetter = getBotMoveHard(gameBoard, humanTurnNum, P2Char)
+                botMoveLetter = getBotMoveMedium(funcGameBoard, humanTurnNum, P2Char)
+            else:
+                botMoveLetter = getBotMoveHard(funcGameBoard, humanTurnNum, P2Char)
 
             if executeMove(1, botMoveLetter):
                 break
@@ -413,11 +501,11 @@ else:
         if botTurnNum == 2:
             print("Bot's turn...")
             if botDifficulty == "1":
-                botMoveLetter = getBotMoveEasy(gameBoard)
+                botMoveLetter = getBotMoveEasy(funcGameBoard)
             elif botDifficulty == "2":
-                botMoveLetter = getBotMoveMedium(gameBoard, humanTurnNum, P1Char)
-            # else:
-            #     botMoveLetter = getBotMoveHard(gameBoard, humanTurnNum, P1Char)
+                botMoveLetter = getBotMoveMedium(funcGameBoard, humanTurnNum, P1Char)
+            else:
+                botMoveLetter = getBotMoveHard(funcGameBoard, humanTurnNum, P1Char)
 
             if executeMove(2, botMoveLetter):
                 break
