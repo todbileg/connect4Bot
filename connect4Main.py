@@ -1,6 +1,8 @@
 import random
-from pydoc import describe
+from colorama import Fore, Style
 
+P1Char = Fore.RED + "X" + Style.RESET_ALL
+P2Char = Fore.YELLOW + "T" + Style.RESET_ALL
 cornerSymbol = "+"
 horizontalSymbol = "-"
 verticalSymbol = "|"
@@ -13,8 +15,6 @@ numCols = 7
 board = ""
 welcomeSymbol = "^"
 message = "Play Connect 4!"
-P1Char = "X"
-P2Char = "T"
 minInput = 2
 maxInput = 4
 yCoordsIndicator = (verticalLength - 1) //2
@@ -25,24 +25,6 @@ connectHowMany = 4
 directions = [(1, 0), (0, 1), (1, 1), (-1, 1), (-1, 0), (0, -1), (-1, -1), (1, -1)]
 listOfPlayer1Moves = []
 listOfPlayer2Moves = []
-
-#for the top row... im doing too much for this stupid thing
-def getLetterFromNumber(n):
-    label = ""
-    while n >= 0:
-        label = numberToLetterMap[n % 26] + label
-        n = (n // 26) - 1
-    return label
-
-
-# important function for correct size texts
-def getCenteredText(middleSymbol, sideSymbol, width):
-    left = (width - len(middleSymbol))//2 * sideSymbol
-    finalText = left + middleSymbol + left
-    if len(finalText) == width - 1:
-        finalText += sideSymbol
-    return finalText
-
 
 def getNewPrintBoard(gameBoard):
     board = ""
@@ -59,7 +41,7 @@ def getNewPrintBoard(gameBoard):
         board += cornerSymbol + "\n"
         for vert in range(verticalLength):
             if vert == yCoordsIndicator:
-                board += getCenteredText(str(row+1), space, lenOfLeftWidth)
+                board += getCenteredText(middleSymbol = str(row+1), sideSymbol = space, width = lenOfLeftWidth)
             else:
                 board += lenOfLeftWidth*space
             for col in range(numCols):
@@ -77,6 +59,23 @@ def getNewPrintBoard(gameBoard):
         board += cornerSymbol + horizontalSymbol*horizontalLength
     board += cornerSymbol
     return board
+
+#for the top row... im doing too much for this feature
+def getLetterFromNumber(n):
+    label = ""
+    while n >= 0:
+        label = numberToLetterMap[n % 26] + label
+        n = (n // 26) - 1
+    return label
+
+
+# important function for correct size texts
+def getCenteredText(middleSymbol, sideSymbol, width):
+    left = (width - len(middleSymbol))//2 * sideSymbol
+    finalText = left + middleSymbol + left
+    if len(finalText) == width - 1:
+        finalText += sideSymbol
+    return finalText
 
 
 def updateGameBoard(gameBoard, x, y, symbol, P):
@@ -226,7 +225,7 @@ def executeMove(P, moveLetter):
     updateGameBoard(gameBoard, inputCoords[0], inputCoords[1], PChar, P)
     isWinner = checkWinner(gameBoard, PChar, inputCoords[0], inputCoords[1])
 
-    print(getNewPrintBoard(gameBoard))
+    print("\n"*15 + getNewPrintBoard(gameBoard))
 
     if isWinner[0]:
         print(f"Player {P} wins!")
@@ -365,8 +364,8 @@ for i in range(len(gameBoard)):
         gameBoard[i][j] = placeholderSymbol
 
 #This is printing out the board
-middleP1 = getCenteredText(P1Char, space, horizontalLength)
-middleP2 = getCenteredText(P2Char, space, horizontalLength)
+middleP1 = getCenteredText(P1Char, space, horizontalLength + len(P1Char) - 1)
+middleP2 = getCenteredText(P2Char, space, horizontalLength + len(P1Char) - 1)
 middleP0 = space * horizontalLength
 
 printBoard = getNewPrintBoard(gameBoard)
