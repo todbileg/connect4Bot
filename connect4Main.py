@@ -262,7 +262,8 @@ def getWinningCoordsRec(funcGameBoard, PChar, d, listOfLocations, numMatches):
     nextCol = latestCol + d[1]
     if 0 <= nextRow < numRows and 0 <= nextCol < numCols:
         if funcGameBoard[nextRow][nextCol] == PChar:
-            return getWinningCoordsRec(funcGameBoard, PChar, d, listOfLocations + [(nextRow, nextCol)], numMatches + 1)
+            return getWinningCoordsRec(funcGameBoard, PChar, d, listOfLocations + [(nextRow, nextCol)],
+                                       numMatches + 1)
     return -1
 
 
@@ -416,8 +417,6 @@ def getBotMoveHard(funcGameBoard, humanP, humanChar):
         elif len(bestMoves) >= 2:
             return testLetter
 
-    #write the 7 shape to win later
-
 
     middleLetters = getMiddleThreeLetters()
     validMiddle = [middleLetter for middleLetter in middleLetters if middleLetter in safeLetters]
@@ -457,58 +456,63 @@ middleP1 = getCenteredText(P1Char, space, horizontalLength + len(P1Char) - 1)
 middleP2 = getCenteredText(P2Char, space, horizontalLength + len(P1Char) - 1)
 middleP0 = space * horizontalLength
 
-printBoard = getNewPrintBoard(funcGameBoard)
-print(titleMessage + "\n" + printBoard)
+def main():
+    printBoard = getNewPrintBoard(funcGameBoard)
+    print(titleMessage + "\n" + printBoard)
 
-gameType = getValidUserInput("Input 1 for Player vs Player\nInput 2 for Player vs Bot",
-                             ["1","2"])
-if gameType == "1":
-    while True:
-        if playerTurn(1):
-            break
-        if playerTurn(2):
-            break
-else:
-    #bot here ask which difficulty
-    whichPlayer = getValidUserInput("Input 1 to play as player 1\nInput 2 to play as player 2",
-                                    ["1", "2"])
-    difficultyPrompt = "Input 1 for easy bot\nInput 2 for medium bot\nInput 3 for hard bot"
-    botDifficulty = getValidUserInput(difficultyPrompt, ["1", "2", "3"])
-
-    humanTurnNum = int(whichPlayer)
-    botTurnNum = 2 if humanTurnNum == 1 else 1
-
-    if botTurnNum == 1 and botDifficulty == "3":
-        executeMove(1, getMiddleLetter())
-        playerTurn(2)
-
-    while True:
-        if botTurnNum == 1:
-            print("Bot's turn...")
-            if botDifficulty == "1":
-                botMoveLetter = getBotMoveEasy(funcGameBoard)
-            elif botDifficulty == "2":
-                botMoveLetter = getBotMoveMedium(funcGameBoard, humanTurnNum, P2Char)
-            else:
-                botMoveLetter = getBotMoveHard(funcGameBoard, humanTurnNum, P2Char)
-
-            if executeMove(1, botMoveLetter):
-                break
-        else:
+    gameType = getValidUserInput("Input 1 for Player vs Player\nInput 2 for Player vs Bot",
+                                 ["1","2"])
+    if gameType == "1":
+        while True:
             if playerTurn(1):
                 break
-
-        if botTurnNum == 2:
-            print("Bot's turn...")
-            if botDifficulty == "1":
-                botMoveLetter = getBotMoveEasy(funcGameBoard)
-            elif botDifficulty == "2":
-                botMoveLetter = getBotMoveMedium(funcGameBoard, humanTurnNum, P1Char)
-            else:
-                botMoveLetter = getBotMoveHard(funcGameBoard, humanTurnNum, P1Char)
-
-            if executeMove(2, botMoveLetter):
-                break
-        else:
             if playerTurn(2):
                 break
+    else:
+        # bot here ask which difficulty
+        whichPlayer = getValidUserInput("Input 1 to play as player 1\nInput 2 to play as player 2",
+                                        ["1", "2"])
+        difficultyPrompt = "Input 1 for easy bot\nInput 2 for medium bot\nInput 3 for hard bot"
+        botDifficulty = getValidUserInput(difficultyPrompt, ["1", "2", "3"])
+
+        humanTurnNum = int(whichPlayer)
+        botTurnNum = 2 if humanTurnNum == 1 else 1
+
+        if botTurnNum == 1 and botDifficulty == "3":
+            executeMove(1, getMiddleLetter())
+            playerTurn(2)
+
+        while True:
+            if botTurnNum == 1:
+                print("Bot's turn...")
+                if botDifficulty == "1":
+                    botMoveLetter = getBotMoveEasy(funcGameBoard)
+                elif botDifficulty == "2":
+                    botMoveLetter = getBotMoveMedium(funcGameBoard, humanTurnNum, P2Char)
+                else:
+                    botMoveLetter = getBotMoveHard(funcGameBoard, humanTurnNum, P2Char)
+
+                if executeMove(1, botMoveLetter):
+                    break
+            else:
+                if playerTurn(1):
+                    break
+
+            if botTurnNum == 2:
+                print("Bot's turn...")
+                if botDifficulty == "1":
+                    botMoveLetter = getBotMoveEasy(funcGameBoard)
+                elif botDifficulty == "2":
+                    botMoveLetter = getBotMoveMedium(funcGameBoard, humanTurnNum, P1Char)
+                else:
+                    botMoveLetter = getBotMoveHard(funcGameBoard, humanTurnNum, P1Char)
+
+                if executeMove(2, botMoveLetter):
+                    break
+            else:
+                if playerTurn(2):
+                    break
+
+
+if __name__ == "__main__":
+    main()
